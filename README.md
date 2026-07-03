@@ -18,14 +18,6 @@ uvicorn main:app --reload
 API running at `http://localhost:8000`
 Docs at `http://localhost:8000/docs`
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-App running at `http://localhost:5173`
-
 ## API Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -46,4 +38,3 @@ App running at `http://localhost:5173`
 - Like/unlike toggle endpoint
 - Real authentication (JWT)
 - Migrate to PostgreSQL
-- Deploy backend on Railway, frontend on Vercel
