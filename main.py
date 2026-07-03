@@ -1,57 +1,65 @@
-from fastapi import FastAPI, Depends, HTTPException
+import os
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from datetime import datetime
+from pydantic import BaseModel
+from datetime import datetime, timezone
 from typing import List
+from supabase import create_client, Client
+from dotenv import load_dotenv
+load_dotenv()
 
-import models, schemas
-from database import engine, get_db
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-models.Base.metadata.create_all(bind=engine)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://bobyard-frontend.vercel.app",],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://bobyard-frontend.vercel.app",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/comments", response_model=List[schemas.CommentOut])
-def get_comments(db: Session = Depends(get_db)):
-    return db.query(models.Comment).order_by(models.Comment.created_at.desc()).all()
+class CommentCreate(BaseModel):
+    text: str
+    author: str = "Admin"
+    images: List[str] = []
 
-@app.post("/comments", response_model=schemas.CommentOut, status_code=201)
-def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db)):
-    db_comment = models.Comment(
-        text=comment.text,
-        author="Admin",
-        created_at=datetime.utcnow(),
-        likes=0,
-        images=comment.images,  
-    )
-    db.add(db_comment)
-    db.commit()
-    db.refresh(db_comment)
-    return db_comment
+class CommentUpdate(BaseModel):
+    text: str
 
-@app.patch("/comments/{comment_id}", response_model=schemas.CommentOut)
-def update_comment(comment_id: int, comment: schemas.CommentCreate, db: Session = Depends(get_db)):
-    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
-    if not db_comment:
+@app.get("/comments")
+def list_comments():
+    res = supabase.table("comments").select("*").order("created_at", desc=True).execute()
+    return res.data
+
+@app.post("/comments", status_code=201)
+def create_comment(comment: CommentCreate):
+    payload = {
+        "text": comment.text,
+        "author": "Admin",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "likes": 0,
+        "images": comment.images,
+    }
+    res = supabase.table("comments").insert(payload).execute()
+    return res.data[0]
+
+@app.patch("/comments/{comment_id}")
+def update_comment(comment_id: int, comment: CommentUpdate):
+    res = supabase.table("comments").update({"text": comment.text}).eq("id", comment_id).execute()
+    if not res.data:
         raise HTTPException(status_code=404, detail="Comment not found")
-    db_comment.text = comment.text
-    db_comment.author = comment.author
-    db.commit()
-    db.refresh(db_comment)
-    return db_comment
+    return res.data[0]
 
 @app.delete("/comments/{comment_id}", status_code=204)
-def delete_comment(comment_id: int, db: Session = Depends(get_db)):
-    db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
-    if not db_comment:
+def delete_comment(comment_id: int):
+    res = supabase.table("comments").delete().eq("id", comment_id).execute()
+    if not res.data:
         raise HTTPException(status_code=404, detail="Comment not found")
-    db.delete(db_comment)
-    db.commit()
     return None
