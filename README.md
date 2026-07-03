@@ -38,3 +38,5 @@ Docs at `http://localhost:8000/docs`
 - Like/unlike toggle endpoint
 - Real authentication (JWT)
 - Migrate to PostgreSQL
+
+The backend is deployed on a free istance of Render: https://bobyard-backend.onrender.com
