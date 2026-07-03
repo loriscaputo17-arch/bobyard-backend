@@ -6,7 +6,9 @@ class CommentBase(BaseModel):
     text: str
 
 class CommentCreate(CommentBase):
+    text: str
     author: str = "Admin"
+    images: List[str] = []
 
 class Comment(CommentBase):
     text: str

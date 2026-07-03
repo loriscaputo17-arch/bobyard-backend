@@ -26,10 +26,10 @@ def get_comments(db: Session = Depends(get_db)):
 def create_comment(comment: schemas.CommentCreate, db: Session = Depends(get_db)):
     db_comment = models.Comment(
         text=comment.text,
-        author=comment.author,
+        author="Admin",
         created_at=datetime.utcnow(),
         likes=0,
-        images=[]
+        images=comment.images,  
     )
     db.add(db_comment)
     db.commit()
