@@ -1,0 +1,5 @@
+fastapi==0.138.2
+pydantic @ file:///Users/ec2-user/croot/pydantic_1776761740204/work
+pydantic-settings @ file:///opt/miniconda3/conda-bld/pydantic-settings_1764165151428/work
+pydantic_core @ file:///Users/ec2-user/croot/pydantic-core_1776694923904/work
+uvicorn==0.49.0
